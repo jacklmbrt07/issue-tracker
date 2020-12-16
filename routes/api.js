@@ -29,6 +29,14 @@ module.exports = function (app) {
 
     .get(function (req, res) {
       let project = req.params.project;
+      let filterObject = Object.assign(req.query);
+      filterObject.project = project;
+
+      Issue.find(filterObject, (err, arrayOfResults) => {
+        if (!err && arrayOfResults) {
+          return res.json(arrayOfResults);
+        }
+      });
     })
 
     .post(function (req, res) {
@@ -87,5 +95,15 @@ module.exports = function (app) {
 
     .delete(function (req, res) {
       let project = req.params.project;
+      if (!req.body._id) {
+        return res.json("id error");
+      }
+      Issue.findByIdAndRemove(req.body._id, (err, deletedIssue) => {
+        if (!err && deletedIssue) {
+          res.json("deleted" + deletedIssue.id);
+        } else if (!deletedIssue) {
+          res.json("could not delete " + req.body._id);
+        }
+      });
     });
 };

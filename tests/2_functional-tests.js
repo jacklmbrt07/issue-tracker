@@ -117,4 +117,94 @@ suite("Functional Tests", function () {
         });
     });
   });
+
+  suite("GET /api/issues/{project} => Array of objects with issue data", () => {
+    test("No filter", (done) => {
+      chai
+        .request(server)
+        .get("/api/issues/test")
+        .query({})
+        .end((err, res) => {
+          assert.equal(res.status, 200);
+          assert.isArray(res.body);
+          assert.property(res.body[0], "issue_title");
+          assert.property(res.body[0], "issue_text");
+          assert.property(res.body[0], "created_on");
+          assert.property(res.body[0], "updated_on");
+          assert.property(res.body[0], "created_by");
+          assert.property(res.body[0], "assigned_to");
+          assert.property(res.body[0], "open");
+          assert.property(res.body[0], "status_text");
+          assert.property(res.body[0], "_id");
+          done();
+        });
+    });
+    test("One filter", (done) => {
+      chai
+        .request(server)
+        .get("/api/issues/test")
+        .query({ created_by: "Functional Test - Every field filled in" })
+        .end((err, res) => {
+          res.body.forEach((issueResult) => {
+            assert.equal(
+              issueResult.created_by,
+              "Functional Test - Every field filled in"
+            );
+          });
+          done();
+        });
+    });
+    test("Multiple filters", (done) => {
+      chai
+        .request(server)
+        .get("/api/issues/test")
+        .query({
+          open: true,
+          created_by: "Functional Test - Every field filled in",
+        })
+        .end((err, res) => {
+          res.body.forEach((issueResult) => {
+            assert.equal(
+              issueResult.created_by,
+              "Functional Test - Every field filled in"
+            );
+            assert.equal(issueResult.open, true);
+          });
+          done();
+        });
+    });
+  });
+
+  suite("DELETE /api/issues/{project} => text", () => {
+    test("No_id", (done) => {
+      chai
+        .request(server)
+        .delete("/api/issues/test")
+        .send({})
+        .end((err, res) => {
+          assert.equal(res.body, "id error");
+          done();
+        });
+    });
+
+    test("Valid _id", (done) => {
+      chai
+        .request(server)
+        .delete("/api/issues/test")
+        .send({ _id: id1 })
+        .end((err, res) => {
+          assert.equal(res.body, "deleted " + id1);
+        });
+      chai
+        .request(server)
+        .delete("/api/issues/test")
+        .send({
+          _id: id2,
+        })
+        .end((err, res) => {
+          assert.equal(res.body, "deleted " + id2);
+          done();
+        });
+    });
+  });
 });
