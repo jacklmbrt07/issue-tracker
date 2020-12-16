@@ -43,13 +43,13 @@ suite("Functional Tests", function () {
         .request(server)
         .post("/api/issues/test")
         .send({
-          issue_title: "Title",
+          issue_title: "Title 2",
           issue_text: "text",
           created_by: "Functional Test - Every field filled in",
         })
         .end((err, res) => {
           assert.equal(res.status, 200);
-          assert.equal(res.body.issue_title, "Title");
+          assert.equal(res.body.issue_title, "Title 2");
           assert.equal(res.body.issue_text, "text");
           assert.equal(
             res.body.created_by,
