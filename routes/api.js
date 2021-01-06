@@ -28,27 +28,24 @@ module.exports = function (app) {
     .route("/api/issues/:project")
 
     .get(function (req, res) {
-      let project = req.params.project;
+      var project = req.params.project;
       let filterObject = Object.assign(req.query);
-      filterObject.project = project;
+      filterObject.project = req.params.project;
 
-      Issue.find(filterObject, (err, arrayOfResults) => {
-        if (!err && arrayOfResults) {
-          return res.json(arrayOfResults);
+      Issue.find(filterObject, (err, issues) => {
+        if(!err && issues){
+          res.json(issues)
         }
-      });
+      })
     })
 
     .post(function (req, res) {
-      let project = req.params.project;
-      if (
-        !req.body.issue_title ||
-        !req.body.issue_text ||
-        !req.body.created_by ||
-        !req.body.open
-      ) {
-        return res.json("Required fields missing from requrest");
+      var project = req.params.project;
+
+      if (!req.body.issue_title || !req.body.issue_text || !req.body.created_by){
+        return res.json({ error: 'required field(s) missing' })
       }
+
       let newIssue = new Issue({
         issue_title: req.body.issue_title,
         issue_text: req.body.issue_text,
@@ -62,13 +59,13 @@ module.exports = function (app) {
       });
       newIssue.save((err, savedIssue) => {
         if (!err && savedIssue) {
-          return res.json(savedIssue);
+          return res.json(savedIssue)
         }
       });
     })
 
     .put(function (req, res) {
-      let project = req.params.project;
+      var project = req.params.project;
       let updateObject = {};
       Object.keys(req.body).forEach((key) => {
         if (req.body[key] != "") {
@@ -94,13 +91,13 @@ module.exports = function (app) {
     })
 
     .delete(function (req, res) {
-      let project = req.params.project;
+      var project = req.params.project;
       if (!req.body._id) {
         return res.json("id error");
       }
       Issue.findByIdAndRemove(req.body._id, (err, deletedIssue) => {
         if (!err && deletedIssue) {
-          res.json("deleted" + deletedIssue.id);
+          res.json("deleted " + deletedIssue.id);
         } else if (!deletedIssue) {
           res.json("could not delete " + req.body._id);
         }

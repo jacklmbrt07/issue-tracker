@@ -8,7 +8,7 @@ chai.use(chaiHttp);
 let id1 = "";
 let id2 = "";
 
-suite("Functional Tests", function () {
+suite("Functional Tests", function() {
   suite("POST /api/issues/{project} => object with issue data", () => {
     test("Every field filled in", (done) => {
       chai
@@ -70,7 +70,7 @@ suite("Functional Tests", function () {
         .post("/api/issues/test")
         .send({ issue_title: "Title" })
         .end((err, res) => {
-          assert.equal(res.body, "Required fields missing from request");
+          assert.equal(res.body.error, 'required field(s) missing');
           done();
         });
     });
@@ -146,10 +146,7 @@ suite("Functional Tests", function () {
         .query({ created_by: "Functional Test - Every field filled in" })
         .end((err, res) => {
           res.body.forEach((issueResult) => {
-            assert.equal(
-              issueResult.created_by,
-              "Functional Test - Every field filled in"
-            );
+            assert.equal(issueResult.created_by, 'Functional Test - Every field filled in')
           });
           done();
         });
@@ -164,11 +161,11 @@ suite("Functional Tests", function () {
         })
         .end((err, res) => {
           res.body.forEach((issueResult) => {
+            assert.equal(issueResult.open, true);
             assert.equal(
               issueResult.created_by,
               "Functional Test - Every field filled in"
             );
-            assert.equal(issueResult.open, true);
           });
           done();
         });
