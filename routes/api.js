@@ -4,7 +4,7 @@ const mongodb = require("mongodb");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-module.exports = function (app) {
+module.exports = function(app) {
   mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -26,7 +26,7 @@ module.exports = function (app) {
   const Issue = mongoose.model("Issue", issueSchema);
 
   const projectSchema = new mongoose.Schema({
-    name: {type: String, required: true},
+    name: { type: String, required: true },
     issues: [issueSchema],
   })
 
@@ -35,22 +35,35 @@ module.exports = function (app) {
   app
     .route("/api/issues/:project")
 
-    .get(function (req, res) {
-      var project = req.params.project;
-      let filterObject = Object.assign(req.query);
-      filterObject.project = req.params.project;
+    .get(function(req, res) {
+      let project = req.params.project;
+      const { _id, open, issue_title, issue_text, created_by, assigned_to, status_text } = req.query;
 
-      Issue.find(filterObject, (err, issues) => {
-        if(!err && issues){
-          res.json(issues)
+      Project.aggregate([
+        { $match: { name: project }},
+        { $unwind: "$issues"},
+        _id != undefined ? { $match: { "issues._id": ObjectId(_id)}} : { $match: {}},
+        open != undefined ? { $match: { "issues.open": open }} : { $match: {}},
+        issue_title != undefined ? { $match: { "issues.issue_title": issue_title }} : { $match: {}},
+        issue_text != undefined ? { $match: { "issues.issue_text": issue_text }} : { $match: {}},
+        created_by != undefined ? { $match: { "issues.created_by": created_by }} : { $match: {}},
+        assigned_to != undefined ? { $match: { "issues.assigned_to": assigned_to }} : { $match: {}},
+        status_text != undefined ? { $match: { "issues.status_text": status_text }} : { $match: {}},
+      ]).exec((err, data) => {
+        if (!data) {
+          res.json({});
+        } else {
+          let mappedData = data.map((item) => item.issues);
+          res.json(mappedData)
         }
       })
+
     })
 
-    .post(function (req, res) {
+    .post(function(req, res) {
       let project = req.params.project;
 
-      if (!req.body.issue_title || !req.body.issue_text || !req.body.created_by){
+      if (!req.body.issue_title || !req.body.issue_text || !req.body.created_by) {
         return res.json({ error: 'required field(s) missing' })
       }
 
@@ -65,7 +78,7 @@ module.exports = function (app) {
         updated_on: new Date().toUTCString(),
       });
 
-      Project.findOne({ name: project }, (err, projectData ) => {
+      Project.findOne({ name: project }, (err, projectData) => {
         if (!projectData) {
           const newProject = new Project({ name: project });
           newProject.issues.push(newIssue);
@@ -90,7 +103,7 @@ module.exports = function (app) {
 
     })
 
-    .put(function (req, res) {
+    .put(function(req, res) {
       var project = req.params.project;
       let updateObject = {};
       Object.keys(req.body).forEach((key) => {
@@ -104,24 +117,24 @@ module.exports = function (app) {
 
 
 
-      if (req.body._id != ""){
-      Issue.findByIdAndUpdate(
-        req.body._id,
-        updateObject,
-        { new: true },
-        (err, updatedIssue) => {
-          if (!err && updatedIssue) {
-            updatedIssue.updated_on = new Date().toUTCString();
-            return res.json({result: 'successfully updated', _id: updatedIssue._id});
-          } else if (!updatedIssue) {
-            return res.json("could not update " + req.body._id);
+      if (req.body._id != "") {
+        Issue.findByIdAndUpdate(
+          req.body._id,
+          updateObject,
+          { new: true },
+          (err, updatedIssue) => {
+            if (!err && updatedIssue) {
+              updatedIssue.updated_on = new Date().toUTCString();
+              return res.json({ result: 'successfully updated', _id: updatedIssue._id });
+            } else if (!updatedIssue) {
+              return res.json("could not update " + req.body._id);
+            }
           }
-        }
-      );
-      } else return res.json({error: "missing _id"})
+        );
+      } else return res.json({ error: "missing _id" })
     })
 
-    .delete(function (req, res) {
+    .delete(function(req, res) {
       var project = req.params.project;
       if (!req.body._id) {
         return res.json("id error");
