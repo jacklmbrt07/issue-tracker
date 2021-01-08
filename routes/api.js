@@ -8,6 +8,7 @@ module.exports = function (app) {
   mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    useFindAndModify: false,
   });
 
   let issueSchema = new mongoose.Schema({
@@ -75,14 +76,16 @@ module.exports = function (app) {
       if (Object.keys(updateObject).length < 2) {
         return res.json("no updated field sent");
       }
-      updateObject.updated_on = new Date().toUTCString();
+
+
       Issue.findByIdAndUpdate(
         req.body._id,
         updateObject,
         { new: true },
         (err, updatedIssue) => {
           if (!err && updatedIssue) {
-            return res.json("successfully updated");
+            updatedIssue.updated_on = new Date().toUTCString();
+            return res.json({result: 'successfully updated', _id: updatedIssue._id});
           } else if (!updatedIssue) {
             return res.json("could not update " + req.body._id);
           }

@@ -59,7 +59,7 @@ suite("Functional Tests", function() {
           assert.equal(res.body.status_text, "");
           assert.equal(res.body.project, "test");
           id2 = res.body._id;
-          console.log("id 1 has been set as " + id2);
+          console.log("id 2 has been set as " + id2);
           done();
         });
     });
@@ -97,7 +97,8 @@ suite("Functional Tests", function() {
           issue_text: "new text",
         })
         .end((err, res) => {
-          assert.equal(res.body, "successfully updated");
+          assert.equal(res.body.result, "successfully updated");
+          assert.equal(res.body._id, id1);
           done();
         });
     });
@@ -112,10 +113,37 @@ suite("Functional Tests", function() {
           issue_text: "new text",
         })
         .end((err, res) => {
-          assert.equal(res.body, "successfully updated");
+          assert.equal(res.body.result, "successfully updated");
+          assert.equal(res.body._id, id2);          
           done();
         });
     });
+
+    // TODO 
+    test("Missing id", (done) => {
+      chai.request(server).put("/api/issues/test").send({
+        _id: '',
+        issue_title: "title with no id",
+        issue_text: "text with no id",
+      })
+      .end((err, res) => {
+        assert.equal(res.body, "missing id");
+        done();
+      })
+    })
+
+    // TODO
+    test("Invalid id", (done) => {
+      chai.request(server).put("/api/issues/test").send({
+        id: "123456789",
+        issue_title: "title with invalid id",
+        issue_text: "text with invalid id"
+      })
+      .end((err, res) => {
+        assert.equal(res.body, "missing id");
+        done();
+      })
+    })
   });
 
   suite("GET /api/issues/{project} => Array of objects with issue data", () => {
@@ -203,5 +231,12 @@ suite("Functional Tests", function() {
           done();
         });
     });
+
+    // TODO
+    test("invaid _id", (done) => {
+      chai.request(server).delete("/api/issues/test").send({ _id: "123456789"}).end((err, res) => {
+        assert.equal(res.body, "invalid id")
+      })
+    })
   });
 });
