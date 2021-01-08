@@ -2,6 +2,7 @@
 const expect = require("chai").expect;
 const mongodb = require("mongodb");
 const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 require("dotenv").config();
 
 module.exports = function(app) {
@@ -17,9 +18,9 @@ module.exports = function(app) {
     created_by: { type: String, required: true },
     assigned_to: String,
     status_text: String,
-    open: { type: Boolean, required: true },
-    created_on: { type: Date, required: true },
-    updated_on: { type: Date, required: true },
+    open: Boolean,
+    created_on: Date,
+    updated_on: Date,
     project: String,
   });
 
@@ -74,8 +75,8 @@ module.exports = function(app) {
         assigned_to: req.body.assigned_to || "",
         status_text: req.body.status_text || "",
         open: true,
-        created_on: new Date().toUTCString(),
-        updated_on: new Date().toUTCString(),
+        created_on: new Date(),
+        updated_on: new Date(),
       });
 
       Project.findOne({ name: project }, (err, projectData) => {
@@ -104,47 +105,70 @@ module.exports = function(app) {
     })
 
     .put(function(req, res) {
-      var project = req.params.project;
-      let updateObject = {};
-      Object.keys(req.body).forEach((key) => {
-        if (req.body[key] != "") {
-          updateObject[key] = req.body[key];
-        }
-      });
-      if (Object.keys(updateObject).length < 2) {
-        return res.json("no updated field sent");
+      let project = req.params.project;
+      const { _id, open, issue_title, issue_text, created_by, assigned_to, status_text } = req.body;
+
+      if (!_id) {
+        return res.json({error: "missing _id"})
       }
 
+      if (!open && !issue_title && !issue_text && !created_by && !assigned_to && !status_text) {
+        return res.json({ error: "no update field(s) sent", _id: _id});
+      }
 
-
-      if (req.body._id != "") {
-        Issue.findByIdAndUpdate(
-          req.body._id,
-          updateObject,
-          { new: true },
-          (err, updatedIssue) => {
-            if (!err && updatedIssue) {
-              updatedIssue.updated_on = new Date().toUTCString();
-              return res.json({ result: 'successfully updated', _id: updatedIssue._id });
-            } else if (!updatedIssue) {
-              return res.json("could not update " + req.body._id);
-            }
+      Project.findOne({name: project}, (err, projectData) => {
+        if (err || !projectData) {
+          res.json({ error: "could not update", _id: _id});
+        } else {
+          const issueData = projectData.issues.id(_id);
+          if (!issueData) {
+            return res.json({ error: "could not update", _id: _id});
           }
-        );
-      } else return res.json({ error: "missing _id" })
+          issueData.issue_title = issue_title || issueData.issue_title;
+          issueData.issue_text = issue_text || issueData.issue_text;
+          issueData.created_by = created_by || issueData.created_by;
+          issueData.assigned_to = assigned_to || issueData.assigned_to;
+          issueData.status_text = status_text || issueData.status_text;
+          issueData.updated_on = new Date();
+          issueData.open = open;
+          projectData.save((err, data) => {
+            if (err || !data) {
+              res.json({ error: "could not update", _id: _id});
+            } else {
+               return res.json({ result: "successfully updated", _id: _id });
+            }
+          });
+        }
+      });
     })
 
     .delete(function(req, res) {
-      var project = req.params.project;
-      if (!req.body._id) {
-        return res.json("id error");
+      let project = req.params.project;
+      const { _id } = req.body;
+
+      if (!_id) {
+        return res.json({ error: "missing _id"});
       }
-      Issue.findByIdAndRemove(req.body._id, (err, deletedIssue) => {
-        if (!err && deletedIssue) {
-          res.json("deleted " + deletedIssue.id);
-        } else if (!deletedIssue) {
-          res.json("could not delete " + req.body._id);
+
+      Project.findOne({name: project}, (err, projectData) => {
+        if(err || !projectData) {
+          res.send({error: "could not delete", _id:_id });
+        } else {
+          const issueData = projectData.issues.id(_id);
+          if (!issueData){
+            return res.send({error: "could not delete", _id: _id})
+          }
+          issueData.remove();
+
+          projectData.save((err, data) => {
+            if (err || !data){
+              res.json({error: "could not delete", _id: issueData._id})
+            } else {
+              res.json({ result: "successfully deleted", _id: issueData._id})
+            }
+          });
         }
-      });
+      })
+
     });
 };
