@@ -78,6 +78,8 @@ module.exports = function (app) {
       }
 
 
+
+      if (req.body._id != ""){
       Issue.findByIdAndUpdate(
         req.body._id,
         updateObject,
@@ -91,6 +93,7 @@ module.exports = function (app) {
           }
         }
       );
+      } else return res.json({error: "missing _id"})
     })
 
     .delete(function (req, res) {

@@ -7,6 +7,7 @@ chai.use(chaiHttp);
 
 let id1 = "";
 let id2 = "";
+let invalid_id = "123456789"
 
 suite("Functional Tests", function() {
   suite("POST /api/issues/{project} => object with issue data", () => {
@@ -119,7 +120,6 @@ suite("Functional Tests", function() {
         });
     });
 
-    // TODO 
     test("Missing id", (done) => {
       chai.request(server).put("/api/issues/test").send({
         _id: '',
@@ -127,20 +127,19 @@ suite("Functional Tests", function() {
         issue_text: "text with no id",
       })
       .end((err, res) => {
-        assert.equal(res.body, "missing id");
+        assert.equal(res.body.error, "missing _id");
         done();
       })
     })
 
-    // TODO
     test("Invalid id", (done) => {
       chai.request(server).put("/api/issues/test").send({
-        id: "123456789",
+        _id: invalid_id,
         issue_title: "title with invalid id",
         issue_text: "text with invalid id"
       })
       .end((err, res) => {
-        assert.equal(res.body, "missing id");
+        assert.equal(res.body, "could not update " + invalid_id);
         done();
       })
     })
@@ -234,8 +233,9 @@ suite("Functional Tests", function() {
 
     // TODO
     test("invaid _id", (done) => {
-      chai.request(server).delete("/api/issues/test").send({ _id: "123456789"}).end((err, res) => {
-        assert.equal(res.body, "invalid id")
+      chai.request(server).delete("/api/issues/test").send({ _id: invalid_id}).end((err, res) => {
+        assert.equal(res.body, "could not delete " + invalid_id);
+        done();
       })
     })
   });
