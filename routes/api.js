@@ -11,7 +11,7 @@ module.exports = function (app) {
     useFindAndModify: false,
   });
 
-  let issueSchema = new mongoose.Schema({
+  const issueSchema = new mongoose.Schema({
     issue_title: { type: String, required: true },
     issue_text: { type: String, required: true },
     created_by: { type: String, required: true },
@@ -23,7 +23,14 @@ module.exports = function (app) {
     project: String,
   });
 
-  let Issue = mongoose.model("Issue", issueSchema);
+  const Issue = mongoose.model("Issue", issueSchema);
+
+  const projectSchema = new mongoose.Schema({
+    name: {type: String, required: true},
+    issues: [issueSchema],
+  })
+
+  const Project = mongoose.model("Project", projectSchema)
 
   app
     .route("/api/issues/:project")
@@ -41,28 +48,46 @@ module.exports = function (app) {
     })
 
     .post(function (req, res) {
-      var project = req.params.project;
+      let project = req.params.project;
 
       if (!req.body.issue_title || !req.body.issue_text || !req.body.created_by){
         return res.json({ error: 'required field(s) missing' })
       }
 
       let newIssue = new Issue({
-        issue_title: req.body.issue_title,
-        issue_text: req.body.issue_text,
-        created_by: req.body.created_by,
+        issue_title: req.body.issue_title || "",
+        issue_text: req.body.issue_text || "",
+        created_by: req.body.created_by || "",
         assigned_to: req.body.assigned_to || "",
         status_text: req.body.status_text || "",
         open: true,
         created_on: new Date().toUTCString(),
         updated_on: new Date().toUTCString(),
-        project: project,
       });
-      newIssue.save((err, savedIssue) => {
-        if (!err && savedIssue) {
-          return res.json(savedIssue)
+
+      Project.findOne({ name: project }, (err, projectData ) => {
+        if (!projectData) {
+          const newProject = new Project({ name: project });
+          newProject.issues.push(newIssue);
+          newProject.save((err, data) => {
+            if (err || !data) {
+              res.send("There was an error saving in post")
+            } else {
+              res.json(newIssue);
+            }
+          });
+        } else {
+          projectData.issues.push(newIssue);
+          projectData.save((err, data) => {
+            if (err || !data) {
+              res.send("There was an error saving in post");
+            } else {
+              res.json(newIssue);
+            }
+          })
         }
-      });
+      })
+
     })
 
     .put(function (req, res) {
