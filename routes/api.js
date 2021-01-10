@@ -41,15 +41,15 @@ module.exports = function(app) {
       const { _id, open, issue_title, issue_text, created_by, assigned_to, status_text } = req.query;
 
       Project.aggregate([
-        { $match: { name: project }},
-        { $unwind: "$issues"},
-        _id != undefined ? { $match: { "issues._id": ObjectId(_id)}} : { $match: {}},
-        open != undefined ? { $match: { "issues.open": open }} : { $match: {}},
-        issue_title != undefined ? { $match: { "issues.issue_title": issue_title }} : { $match: {}},
-        issue_text != undefined ? { $match: { "issues.issue_text": issue_text }} : { $match: {}},
-        created_by != undefined ? { $match: { "issues.created_by": created_by }} : { $match: {}},
-        assigned_to != undefined ? { $match: { "issues.assigned_to": assigned_to }} : { $match: {}},
-        status_text != undefined ? { $match: { "issues.status_text": status_text }} : { $match: {}},
+        { $match: { name: project } },
+        { $unwind: "$issues" },
+        _id != undefined ? { $match: { "issues._id": ObjectId(_id) } } : { $match: {} },
+        open != undefined ? { $match: { "issues.open": open } } : { $match: {} },
+        issue_title != undefined ? { $match: { "issues.issue_title": issue_title } } : { $match: {} },
+        issue_text != undefined ? { $match: { "issues.issue_text": issue_text } } : { $match: {} },
+        created_by != undefined ? { $match: { "issues.created_by": created_by } } : { $match: {} },
+        assigned_to != undefined ? { $match: { "issues.assigned_to": assigned_to } } : { $match: {} },
+        status_text != undefined ? { $match: { "issues.status_text": status_text } } : { $match: {} },
       ]).exec((err, data) => {
         if (!data) {
           res.json({});
@@ -109,20 +109,20 @@ module.exports = function(app) {
       const { _id, open, issue_title, issue_text, created_by, assigned_to, status_text } = req.body;
 
       if (!_id) {
-        return res.json({error: "missing _id"})
+        return res.json({ error: "missing _id" })
       }
 
       if (!open && !issue_title && !issue_text && !created_by && !assigned_to && !status_text) {
-        return res.json({ error: "no update field(s) sent", _id: _id});
+        return res.json({ error: "no update field(s) sent", _id: _id });
       }
 
-      Project.findOne({name: project}, (err, projectData) => {
+      Project.findOne({ name: project }, (err, projectData) => {
         if (err || !projectData) {
-          res.json({ error: "could not update", _id: _id});
+          res.json({ error: "could not update", _id: _id });
         } else {
           const issueData = projectData.issues.id(_id);
           if (!issueData) {
-            return res.json({ error: "could not update", _id: _id});
+            return res.json({ error: "could not update", _id: _id });
           }
           issueData.issue_title = issue_title || issueData.issue_title;
           issueData.issue_text = issue_text || issueData.issue_text;
@@ -133,9 +133,9 @@ module.exports = function(app) {
           issueData.open = open;
           projectData.save((err, data) => {
             if (err || !data) {
-              res.json({ error: "could not update", _id: _id});
+              res.json({ error: "could not update", _id: _id });
             } else {
-               return res.json({ result: "successfully updated", _id: _id });
+              return res.json({ result: "successfully updated", _id: _id });
             }
           });
         }
@@ -147,24 +147,24 @@ module.exports = function(app) {
       const { _id } = req.body;
 
       if (!_id) {
-        return res.json({ error: "missing _id"});
+        return res.json({ error: "missing _id" });
       }
 
-      Project.findOne({name: project}, (err, projectData) => {
-        if(err || !projectData) {
-          res.send({error: "could not delete", _id:_id });
+      Project.findOne({ name: project }, (err, projectData) => {
+        if (err || !projectData) {
+          res.send({ error: "could not delete", _id: _id });
         } else {
           const issueData = projectData.issues.id(_id);
-          if (!issueData){
-            return res.send({error: "could not delete", _id: _id})
+          if (!issueData) {
+            return res.send({ error: "could not delete", _id: _id })
           }
           issueData.remove();
 
           projectData.save((err, data) => {
-            if (err || !data){
-              res.json({error: "could not delete", _id: issueData._id})
+            if (err || !data) {
+              res.json({ error: "could not delete", _id: issueData._id })
             } else {
-              res.json({ result: "successfully deleted", _id: issueData._id})
+              res.json({ result: "successfully deleted", _id: issueData._id })
             }
           });
         }

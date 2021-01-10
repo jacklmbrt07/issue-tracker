@@ -5,9 +5,9 @@ const server = require("../server");
 
 chai.use(chaiHttp);
 
-let id1 = "";
-let id2 = "";
-let invalid_id = "123456789"
+let id1 = ""; 
+let id2 = ""; 
+let invalid_id = "123456789";
 
 suite("Functional Tests", function() {
   suite("POST /api/issues/{project} => object with issue data", () => {
@@ -80,9 +80,10 @@ suite("Functional Tests", function() {
       chai
         .request(server)
         .put("/api/issues/test")
-        .send({})
+        .send({ _id: id1})
         .end((err, res) => {
-          assert.equal(res.body, "no updated field sent");
+          assert.equal(res.body.error, "no update field(s) sent");
+          assert.equal(res.body._id, id1)
           done();
         });
     });
@@ -137,7 +138,8 @@ suite("Functional Tests", function() {
         issue_text: "text with invalid id"
       })
       .end((err, res) => {
-        assert.equal(res.body, "could not update " + invalid_id);
+        assert.equal(res.body.error, "could not update")
+        assert.equal(res.body._id, invalid_id)
         done();
       })
     })
@@ -204,7 +206,7 @@ suite("Functional Tests", function() {
         .delete("/api/issues/test")
         .send({})
         .end((err, res) => {
-          assert.equal(res.body, "id error");
+          assert.equal(res.body.error, "missing _id");
           done();
         });
     });
@@ -215,26 +217,22 @@ suite("Functional Tests", function() {
         .delete("/api/issues/test")
         .send({ _id: id1 })
         .end((err, res) => {
-          assert.equal(res.body, "deleted " + id1);
-        });
+          assert.equal(res.body.result, "successfully deleted")
+          assert.equal(res.body._id, id1)
+          done();
+        })
+    });
+
+    test("invalid _id", (done) => {
       chai
         .request(server)
         .delete("/api/issues/test")
-        .send({
-          _id: id2,
-        })
+        .send({ _id: invalid_id})
         .end((err, res) => {
-          assert.equal(res.body, "deleted " + id2);
+          assert.equal(res.body.error, "could not delete")
+          assert.equal(res.body._id, invalid_id);
           done();
         });
-    });
-
-    // TODO
-    test("invaid _id", (done) => {
-      chai.request(server).delete("/api/issues/test").send({ _id: invalid_id}).end((err, res) => {
-        assert.equal(res.body, "could not delete " + invalid_id);
-        done();
-      })
     })
   });
 });
