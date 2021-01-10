@@ -32,7 +32,6 @@ suite("Functional Tests", function() {
           );
           assert.equal(res.body.assigned_to, "Chai and Mocha");
           assert.equal(res.body.status_text, "In QA");
-          assert.equal(res.body.project, "test");
           id1 = res.body._id;
           console.log("id 1 has been set as " + id1);
           done();
@@ -58,7 +57,6 @@ suite("Functional Tests", function() {
           );
           assert.equal(res.body.assigned_to, "");
           assert.equal(res.body.status_text, "");
-          assert.equal(res.body.project, "test");
           id2 = res.body._id;
           console.log("id 2 has been set as " + id2);
           done();
